@@ -23,3 +23,45 @@ AI+X 딥러닝 Final Project
 ### 설명
 음향 데이터들로부터의 감정을 인식(Emotion Recognition)하는 모델을 만들어 주세요!
 
+### Dataset Info.
+
+#### train [폴더]
+학습을 위한 소리 샘플
+TRAIN_0000.wav ~ TRAIN_5000.wav
+
+
+#### test [폴더]
+추론을 위한 소리 샘플
+TEST_0000.wav ~ TEST_1880.wav
+
+
+#### train.csv [파일]
+id : 샘플 별 고유 ID
+path : 음향 샘플 파일 경로
+label : 감정의 종류
+0: angry
+1: fear
+2: sad
+3: disgust
+4: neutral
+5: happy
+
+
+#### test.csv [파일]
+id : 샘플 별 고유 ID
+path : 음향 샘플 파일 경로
+
+
+#### sample_submission.csv [파일] - 제출 양식
+id : 샘플 별 고유 ID
+label : 예측한 감정의 종류
+
+-------------------------
+## License & Rights
+This Crowd-sourced Emotional Mutimodal Actors Dataset (CREMA-D) is made available under the Open Database License: 
+
+http://opendatacommons.org/licenses/odbl/1.0/. 
+
+Any rights in individual contents of the database are licensed under the Database Contents License: 
+
+http://opendatacommons.org/licenses/dbcl/1.0/
