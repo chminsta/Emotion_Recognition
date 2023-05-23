@@ -25,17 +25,17 @@ AI+X 딥러닝 Final Project
 
 ### Dataset Info.
 
-#### train [폴더]
+* train [폴더]
 학습을 위한 소리 샘플
 TRAIN_0000.wav ~ TRAIN_5000.wav
 
 
-#### test [폴더]
+* test [폴더]
 추론을 위한 소리 샘플
 TEST_0000.wav ~ TEST_1880.wav
 
 
-#### train.csv [파일]
+* train.csv [파일]
 id : 샘플 별 고유 ID
 path : 음향 샘플 파일 경로
 label : 감정의 종류
@@ -47,12 +47,12 @@ label : 감정의 종류
 5: happy
 
 
-#### test.csv [파일]
+* test.csv [파일]
 id : 샘플 별 고유 ID
 path : 음향 샘플 파일 경로
 
 
-#### sample_submission.csv [파일] - 제출 양식
+* sample_submission.csv [파일] - 제출 양식
 id : 샘플 별 고유 ID
 label : 예측한 감정의 종류
 
