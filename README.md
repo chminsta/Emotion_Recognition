@@ -23,6 +23,8 @@ AI+X 딥러닝 Final Project
 ### 설명
 음향 데이터들로부터의 감정을 인식(Emotion Recognition)하는 모델을 만들어 주세요!
 
+### Proposal (Option 1)
+
 ### Dataset Info.
 
 * train [폴더]
