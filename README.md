@@ -66,7 +66,8 @@ label : 예측한 감정의 종류
 
 ------------------------------------
 ## III. Methodology
-### Wav2vec 2.0
+> 저희는 크게 두가지 방식으로 진행하였습니다. 첫번째로 WAV2VEC을 이용하였고, 두번째로 LIBROSA를 이용하였습니다.
+### [1] Wav2vec 2.0
 -	2020년에 Facebook에서 발표한 트렌스포머를 사용한 자기지도학습 모델
 -	자기지도학습이란 라벨이 없는 데이터의 집합에서 특성을 배우는 학습 방법
 -	라벨링 되어있지 않은 데이터로 표현학습을 한 후 소량의 라벨링 된 데이터를 사용하여 fine-tuning함
@@ -100,6 +101,70 @@ label : 예측한 감정의 종류
 
 
 -------------------------
+### [2] Librosa
+음성파일에 감정과 상관관계에 있는 요소들이 무엇이 있을까 생각을 해보았습니다. 음높이, 강도, 템포, 음색 등등을 생각해 내었고 이 네 가지를 이용하여 모델을 만들면 좋을 것 같다고 판단하였습니다. 데이터 셋으로부터 이 특징들을 추출하기 위하여 numpy와 librosa를 이용하였습니다.
+```python
+train_df = pd.read_csv('train.csv')
+test_df = pd.read_csv('test.csv')
+features_dir = 'extracted_features'
+os.makedirs(features_dir, exist_ok=True)
+```
+> 데이터셋을 로드합니다. 데이터셋 전처리 결과를 저장할 폴더를 만듭니다. 전처리 과정이 너무 오래 걸려서 최초실행시에만 추출하고 그 뒤로는 저장된 값을 사용하게 했습니다. 
+```python
+def preprocess_audio(file_path):
+    features_file = os.path.join(features_dir, os.path.splitext(os.path.basename(file_path))[0] + '.npy')
+    if os.path.exists(features_file):
+        print(f"Loading features from {features_file}")
+        return np.load(features_file)
+    audio, sample_rate = librosa.load(file_path, res_type='kaiser_fast', mono=True)
+    pitch = librosa.yin(audio, fmin=100, fmax=1000)
+    energy = np.mean(audio ** 2)
+    onset_env = librosa.onset.onset_strength(y=audio, sr=sample_rate)
+    tempo = librosa.beat.tempo(onset_envelope=onset_env, sr=sample_rate)[0]
+    mfccs = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=13)
+    delta_mfccs = librosa.feature.delta(mfccs)
+    delta2_mfccs = librosa.feature.delta(mfccs, order=2)
+```
+> 전처리를 담당하는 함수입니다. 먼저 추출된 특징이 이미 있으면 백업파일을 사용하게 했습니다.
+> Librosa와 Numpy를 이용하여 pitch, intensity 를 추출합니다.
+> 각 시점에 발생할 수 있는 ‘onset’, 오디오 신호의 특별한 변화점들을 추출한 뒤, 이를 이용하여 tempo를 추출합니다.
+> 이번엔 톤을 추출하기 위해 mfccs를 추출합니다. Mfcc는 Mel-frequency cepstral coefficients로 노이즈를 제거하고 중요한 음색, 톤을 추출하는 기능을 합니다. 이렇게 추출한 톤의 변화율과 가속률을 또 추출합니다.
+```python
+    max_len = 1000
+    pitch = np.pad(pitch, (0, max_len - len(pitch)))
+    mfccs = np.pad(mfccs, ((0, 0), (0, max_len - mfccs.shape[1])))
+    delta_mfccs = np.pad(delta_mfccs, ((0, 0), (0, max_len - delta_mfccs.shape[1])))
+    delta2_mfccs = np.pad(delta2_mfccs, ((0, 0), (0, max_len - delta2_mfccs.shape[1])))
+    features = np.concatenate((pitch, [energy], [tempo], mfccs.flatten(), delta_mfccs.flatten(), delta2_mfccs.flatten())
+    np.save(features_file, features)    
+    print(f"Extracted features saved to {features_file}")
+    return features
+```
+> 이후 행렬계산을 위해 max_len으로 패딩을 하고 추출값을 백업합니다.
+```python
+train_df['audio_features'] = train_df['path'].apply(preprocess_audio)
+test_df['audio_features'] = test_df['path'].apply(preprocess_audio)
+
+X = np.stack(train_df['audio_features'].values)
+y = train_df['label'].values
+
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+label_encoder = LabelEncoder()
+y_train_encoded = label_encoder.fit_transform(y_train)
+y_val_encoded = label_encoder.transform(y_val)
+
+X_test = np.stack(test_df['audio_features'].values)
+test_predictions = model.predict(X_test)
+test_df['predicted_label'] = label_encoder.inverse_transform(test_predictions)
+
+test_df.to_csv('test_predictions.csv', index=False)
+
+```
+> 데이터 셋을 전처리합니다. 
+> 추출한 특징들을 X에 정리하고 y에 label을 정리합니다. 그후 validation을 위해 0.2의 비율로 나눕니다. 그후 라벨을 숫자로 encode를 합니다.
+> 학습을 시킵니다. SVC모델을 사용하였고 이후 Random Forest, Logistic Regression 으로도 해보았습니다. 
+> 학습된 모델을 바탕으로 test 데이터에 테스트를 합니다.
 
 ## IV. Evaluation & Analysis
 - Graphs, tables, any statistics (if any)
