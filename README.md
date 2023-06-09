@@ -204,12 +204,11 @@ submission_df.to_csv('submission.csv', index=False)
 | TEST_0028 | 5     |
 ........
 
-<p align="center">
-submission.csv가 위와 같이 1880개의 데이터셋을 테스트 하였고 데이콘에 제출한 결과 wav2vec을 이용한 정확도는 약 0.32, librosa를 이용한 정확도는 약 0.45으로 나왔습니다. 찍었을때 확률이 0.16161..임을 감안하면 약 2.8배 정확한 걸 알 수 있습니다. 그래도 많이 부족한 결과임을 알 수 있었습니다.
+
+#### submission.csv가 위와 같이 1880개의 데이터셋을 테스트 하였고 데이콘에 제출한 결과 wav2vec을 이용한 정확도는 약 0.32, librosa를 이용한 정확도는 약 0.45으로 나왔습니다. 찍었을때 확률이 0.16161..임을 감안하면 약 2.8배 정확한 걸 알 수 있습니다. 그래도 많이 부족한 결과임을 알 수 있었습니다.
 	
-	
-	<img width="100" alt="화면 캡처 2023-06-09 133935" src="https://github.com/chminsta/Emotion_Recognition/assets/119744076/e6064874-5881-456e-a45d-b6284ebb4d0d"  >
-</p>
+<img width="100" alt="화면 캡처 2023-06-09 133935" src="https://github.com/chminsta/Emotion_Recognition/assets/119744076/e6064874-5881-456e-a45d-b6284ebb4d0d">
+
 -------------------------
 
 ## V. Related Work
