@@ -159,16 +159,51 @@ test_predictions = model.predict(X_test)
 test_df['predicted_label'] = label_encoder.inverse_transform(test_predictions)
 
 test_df.to_csv('test_predictions.csv', index=False)
-
+submission_df = pd.DataFrame({
+    'id': test_df['id'],
+    'label': test_df['predicted_label']
+})
+submission_df.to_csv('submission.csv', index=False)
 ```
 > 데이터 셋을 전처리합니다. 
 > 추출한 특징들을 X에 정리하고 y에 label을 정리합니다. 그후 validation을 위해 0.2의 비율로 나눕니다. 그후 라벨을 숫자로 encode를 합니다.
 > 학습을 시킵니다. SVC모델을 사용하였고 이후 Random Forest, Logistic Regression 으로도 해보았습니다. 
-> 학습된 모델을 바탕으로 test 데이터에 테스트를 합니다.
+> 학습된 모델을 바탕으로 test 데이터에 테스트를 합니다. submission.csv로 저장하였습니다.
 
 ## IV. Evaluation & Analysis
-- Graphs, tables, any statistics (if any)
-
+| id        | label |
+|-----------|-------|
+| TEST_0000 | 5     |
+| TEST_0001 | 0     |
+| TEST_0002 | 2     |
+| TEST_0003 | 2     |
+| TEST_0004 | 5     |
+| TEST_0005 | 4     |
+| TEST_0006 | 2     |
+| TEST_0007 | 3     |
+| TEST_0008 | 1     |
+| TEST_0009 | 5     |
+| TEST_0010 | 1     |
+| TEST_0011 | 4     |
+| TEST_0012 | 2     |
+| TEST_0013 | 0     |
+| TEST_0014 | 0     |
+| TEST_0015 | 3     |
+| TEST_0016 | 0     |
+| TEST_0017 | 1     |
+| TEST_0018 | 2     |
+| TEST_0019 | 4     |
+| TEST_0020 | 2     |
+| TEST_0021 | 2     |
+| TEST_0022 | 5     |
+| TEST_0023 | 5     |
+| TEST_0024 | 4     |
+| TEST_0025 | 1     |
+| TEST_0026 | 2     |
+| TEST_0027 | 2     |
+| TEST_0028 | 5     |
+....
+submission.csv가 다음과 같이 1880개의 데이터셋을 테스트 하였고 데이콘에 제출한 결과 0.4
 -------------------------
 
 ## V. Related Work
