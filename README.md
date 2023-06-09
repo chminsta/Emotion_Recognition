@@ -170,9 +170,9 @@ submission_df.to_csv('submission.csv', index=False)
 > 학습을 시킵니다. SVC모델을 사용하였고 이후 Random Forest, Logistic Regression 으로도 해보았습니다. 
 > 학습된 모델을 바탕으로 test 데이터에 테스트를 합니다. submission.csv로 저장하였습니다.
 
-## IV. Evaluation & Analysis
+## IV. Evaluation & Analysis	
 | id        | label |
-|-----------|-------|
+|:---------:|:-----:|
 | TEST_0000 | 5     |
 | TEST_0001 | 0     |
 | TEST_0002 | 2     |
@@ -202,8 +202,14 @@ submission_df.to_csv('submission.csv', index=False)
 | TEST_0026 | 2     |
 | TEST_0027 | 2     |
 | TEST_0028 | 5     |
-....
-submission.csv가 다음과 같이 1880개의 데이터셋을 테스트 하였고 데이콘에 제출한 결과 0.4
+........
+
+<p align="center">
+submission.csv가 위와 같이 1880개의 데이터셋을 테스트 하였고 데이콘에 제출한 결과 wav2vec을 이용한 정확도는 약 0.32, librosa를 이용한 정확도는 약 0.45으로 나왔습니다. 찍었을때 확률이 0.16161..임을 감안하면 약 2.8배 정확한 걸 알 수 있습니다. 그래도 많이 부족한 결과임을 알 수 있었습니다.
+	
+	
+	<img width="100" alt="화면 캡처 2023-06-09 133935" src="https://github.com/chminsta/Emotion_Recognition/assets/119744076/e6064874-5881-456e-a45d-b6284ebb4d0d"  >
+</p>
 -------------------------
 
 ## V. Related Work
