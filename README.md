@@ -7,11 +7,11 @@ AI+X 딥러닝 Final Project
 ### Title: 음향 데이터 기반 감정 인식 AI 모델 개발
 >음향 데이터들로부터의 감정을 인식(Emotion Recognition)하는 모델
 ### Members
-* 정재희 | 융합전자공학부 | jayjeong7364@outlook.kr
+* 정재희 | 융합전자공학부 | jayjeong7364@outlook.kr | wav2vec 을 이용한 데이터 전처리 및 학습
 
-* 이창민 | 융합전자공학부 | lcentimeter@hanyang.ac.kr
+* 이창민 | 융합전자공학부 | lcentimeter@hanyang.ac.kr | Librosa 를 이용한 데이터 전처리 및 학습
 
-* 정지훈 | 정책학과 | wond1216@naver.com
+* 정지훈 | 정책학과 | wond1216@naver.com | 데이터 셋 수집, 관련 알고리즘 조사, 데이터 학습, 설명 발표 [영상](https://youtu.be/i53mOiCMns4)
 
 ----------------------------
 
