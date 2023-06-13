@@ -99,6 +99,152 @@ label : 예측한 감정의 종류
 5.	contrastive loss를 최소화하면 음성 데이터 안에 공통적으로 가지고 있는 상호 정보를 최대화할 수 있다.
 6.	wav2vec 2.0을 학습한 후 fine-tuning을 수행하면 적은 데이터로도 좋은 성능을 보장할 수 있다.
 
+#### Code 설명
+```python
+def speech_file_to_array_fn(df):
+    feature = []
+    for path in tqdm(df['path']):
+        speech_array, _ = librosa.load(path, sr=CFG['SR'])
+        feature.append(speech_array)
+    return feature
+```
+>위 함수는 먼저 빈 리스트인 feature를 초기화하고 df['path']에서 각 경로를 반복하면서 librosa.load 함수를 사용하여 해당 경로의 음성 파일을 불러온다. 이때, 샘플링 주파수는 CFG['SR']로 설정된다. 로드된 음성 파일은 speech_array에 할당되고 이를 feature 리스트에 추가한다. 모든 음성 파일에 대해 위의 작업을 반복한 후, 최종적으로 feature 리스트를 반환한다. 이 리스트는 DataFrame의 'path' 열에 지정된 모든 음성 파일들이 배열로 변환된 것을 포함하고 있다.
+```python
+def create_data_loader(dataset, batch_size, shuffle, collate_fn, num_workers=0):
+    return DataLoader(dataset,
+                      batch_size=batch_size,
+                      shuffle=shuffle,
+                      collate_fn=collate_fn,
+                      num_workers=num_workers
+                      )
+
+train_dataset = CustomDataSet(train_x, train_df['label'], processor)
+valid_dataset = CustomDataSet(valid_x, valid_df['label'], processor)
+
+train_loader = create_data_loader(train_dataset, CFG['BATCH_SIZE'], False, collate_fn, 16)
+valid_loader = create_data_loader(valid_dataset, CFG['BATCH_SIZE'], False, collate_fn, 16)
+```
+>create_data_loader 함수는 주어진 데이터셋과 매개변수를 사용하여 DataLoader 객체를 생성하는 함수이다. 먼저 함수는 주어진 dataset, batch_size, shuffle, collate_fn, num_workers를 매개변수로 받는다. 이 함수는 torch.utils.data.DataLoader 클래스를 사용하여 데이터로더 객체를 생성하는데 주어진 데이터셋과 매개변수를 사용하여 데이터 로딩 및 배치 처리 설정을 구성한다. 배치 크기, 셔플 여부, 데이터 배치 처리 함수, 워커 개수 등의 매개변수를 설정한다. 이렇게 생성된 데이터 로더를 사용하면 학습과 검증 과정에서 데이터를 배치 단위로 로딩하고 필요한 전처리 작업 등을 수행할 수 있게 된다.
+```python
+def validation(model, valid_loader, creterion):
+    model.eval()
+    val_loss = []
+
+    total, correct = 0, 0
+    test_loss = 0
+
+    with torch.no_grad():
+        for x, y in tqdm(iter(valid_loader)):
+            x = x.to(device)
+            y = y.flatten().to(device)
+
+            output = model(x)
+            loss = creterion(output, y)
+
+            val_loss.append(loss.item())
+
+            test_loss += loss.item()
+            _, predicted = torch.max(output, 1)
+            total += y.size(0)
+            correct += predicted.eq(y).cpu().sum()
+
+    accuracy = correct / total
+
+    avg_loss = np.mean(val_loss)
+
+    return avg_loss, accuracy
+```
+>validation 함수는 모델을 평가하기 위한 함수이다. 이 함수는 주어진 모델을 평가 모드로 설정하고 검증 데이터로더를 사용하여 모델의 성능을 평가한다. 이를 위해 검증 데이터로더에서 배치별로 데이터를 가져온다. 그리고 이동시킨 데이터를 모델에 입력으로 전달하여 출력을 얻는다. 출력과 정답 간의 손실을 계산하기 위해 손실 함수를 사용하고 계산된 손실은 검증 손실 리스트에 추가된다. 정확도를 계산하기 위해 예측된 출력과 정답을 비교하는데 예측된 출력에서 최대값을 찾아 정답과 비교하여 정확한 예측 개수를 계산한다. 모든 배치에 대해 손실과 정확도를 계산한 후 평균 검증 손실과 정확도를 한다.
+```python
+class BaseModel(torch.nn.Module):
+    def __init__(self):
+        super(BaseModel, self).__init__()
+        self.model = audio_model
+        self.model.classifier = nn.Identity()
+        self.classifier = nn.Linear(256, 8)
+
+    def forward(self, x):
+        output = self.model(x)
+        output = self.classifier(output.logits)
+        return output
+```
+>BaseModel은 음성 분류를 위한 모델이다. 해당 모델은 audio_model (facebook/wav2vec2-base, wav2vec2모델)이라는 사전 학습된 음성 분류 모델을 기반으로 구성되어 있다. 모델의 구조를 설정할 때 기존 모델의 분류기를 nn.Identity()로 대체하였고 nn.Linear(256, 8)을 분류기로 설정했다. 이 모델은 입력 데이터를 받아 모델을 통과시킨 후 출력값을 반환하는 모델이다.
+```python
+def train(model, train_loader, valid_loader, optimizer, scheduler):
+    accumulation_step = int(CFG['TOTAL_BATCH_SIZE'] / CFG['BATCH_SIZE'])
+    model.to(device)
+    creterion = nn.CrossEntropyLoss().to(device)
+
+    best_model = None
+    best_acc = 0
+
+    for epoch in range(1, CFG['EPOCHS']+1):
+        train_loss = []
+        model.train()
+        for i, (x, y) in enumerate(tqdm(train_loader)):
+            x = x.to(device)
+            y = y.flatten().to(device)
+
+            optimizer.zero_grad()
+            
+            output = model(x)
+            loss = creterion(output, y)
+            loss.backward()
+
+            if (i+1) % accumulation_step == 0:
+                optimizer.step()
+                optimizer.zero_grad()
+
+            train_loss.append(loss.item())
+
+        avg_loss = np.mean(train_loss)
+        valid_loss, valid_acc = validation(model, valid_loader, creterion)
+
+        if scheduler is not None:
+            scheduler.step(valid_acc)
+
+        if valid_acc > best_acc:
+            best_acc = valid_acc
+            best_model = model
+
+        print(f'epoch:[{epoch}] train loss:[{avg_loss:.5f}] valid_loss:[{valid_loss:.5f}] valid_acc:[{valid_acc:.5f}]')
+    
+    print(f'best_acc:{best_acc:.5f}')
+
+    return best_model
+```
+>train 함수는 모델을 학습시키는 역할을 한다. 주어진 학습 데이터로더를 사용하여 모델을 반복적으로 학습하고 옵티마이저를 활용하여 가중치를 하게되는데 학습 중에는 모델을 train 모드로 설정하여 드롭아웃 및 배치 정규화와 같은 기법들을 적용하였다. 또한 배치 크기에 따른 그래디언트 누적을 처리하기 위해 accumulation_step을 설정했고 학습 과정에서 발생한 손실값들을 기록하고 주기적으로 검증 데이터를 사용하여 모델의 성능을 평가한다. 성능이 개선될 때마다 최적의 모델을 저장하고 학습이 완료된 후에는 최적의 모델을 반환한다.
+```python
+model = BaseModel()
+optimizer = torch.optim.Adam(model.parameters(), lr=CFG['LR'])
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=3, verbose=True)
+infer_model = train(model, train_loader, valid_loader, optimizer, scheduler)
+test_df = pd.read_csv('./test.csv')
+def collate_fn_test(batch):
+    x = pad_sequence([torch.tensor(xi) for xi in batch], batch_first=True)
+    return x
+test_x = speech_file_to_array_fn(test_df)
+test_dataset = CustomDataSet(test_x, y=None, processor=processor)
+test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=CFG['BATCH_SIZE'], shuffle=False, collate_fn=collate_fn_test)
+def inference(model, test_loader):
+    model.eval()
+    preds = []
+
+    with torch.no_grad():
+        for x in tqdm(iter(test_loader)):
+            x = x.to(device)
+
+            output = model(x)
+
+            preds += output.argmax(-1).detach().cpu().numpy().tolist()
+
+    return preds
+preds = inference(infer_model, test_loader)
+submission = pd.read_csv('./sample_submission.csv')
+submission['label'] = preds
+submission.to_csv('./baseline_submission.csv', index=False)
+```
+>위 코드는 위에서 설계한 모델과 전처리된 데이터를 train 함수를 사용하여 훈련시키고 생성된 infer_model을 inference 함수를 사용하여 추론을 수행하고 예측결과를 preds에 담는다. 그리고 예측결과를 baseline_submission.csv라는 파일에 출력하게 된다.
 
 -------------------------
 ### [2] Librosa
