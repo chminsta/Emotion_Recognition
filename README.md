@@ -248,14 +248,14 @@ submission.to_csv('./baseline_submission.csv', index=False)
 
 -------------------------
 ### [2] Librosa
-음성파일에 감정과 상관관계에 있는 요소들이 무엇이 있을까 생각을 해보았습니다. 음높이, 강도, 템포, 음색 등등을 생각해 내었고 이 네 가지를 이용하여 모델을 만들면 좋을 것 같다고 판단하였습니다. 데이터 셋으로부터 이 특징들을 추출하기 위하여 numpy와 librosa를 이용하였습니다.
+음성파일에 감정과 상관관계에 있는 요소들이 무엇이 있을까 생각을 해보았다. 음높이, 강도, 템포, 음색 등등을 생각해 내었고 이 네 가지를 이용하여 모델을 만들면 좋을 것 같다고 판단하였다. 데이터 셋으로부터 이 특징들을 추출하기 위하여 numpy와 librosa를 이용하였다.
 ```python
 train_df = pd.read_csv('train.csv')
 test_df = pd.read_csv('test.csv')
 features_dir = 'extracted_features'
 os.makedirs(features_dir, exist_ok=True)
 ```
-> 데이터셋을 로드합니다. 데이터셋 전처리 결과를 저장할 폴더를 만듭니다. 전처리 과정이 너무 오래 걸려서 최초실행시에만 추출하고 그 뒤로는 저장된 값을 사용하게 했습니다. 
+> 데이터셋을 로드하고 데이터셋 전처리 결과를 저장할 폴더를 만든다. (전처리 과정이 너무 오래 걸려서 최초실행시에만 추출하고 그 뒤로는 저장된 값을 사용하게 했다.) 
 ```python
 def preprocess_audio(file_path):
     features_file = os.path.join(features_dir, os.path.splitext(os.path.basename(file_path))[0] + '.npy')
@@ -271,10 +271,10 @@ def preprocess_audio(file_path):
     delta_mfccs = librosa.feature.delta(mfccs)
     delta2_mfccs = librosa.feature.delta(mfccs, order=2)
 ```
-> 전처리를 담당하는 함수입니다. 먼저 추출된 특징이 이미 있으면 백업파일을 사용하게 했습니다.
-> Librosa와 Numpy를 이용하여 pitch, intensity 를 추출합니다.
-> 각 시점에 발생할 수 있는 ‘onset’, 오디오 신호의 특별한 변화점들을 추출한 뒤, 이를 이용하여 tempo를 추출합니다.
-> 이번엔 톤을 추출하기 위해 mfccs를 추출합니다. Mfcc는 Mel-frequency cepstral coefficients로 노이즈를 제거하고 중요한 음색, 톤을 추출하는 기능을 합니다. 이렇게 추출한 톤의 변화율과 가속률을 또 추출합니다.
+> 전처리를 담당하는 함수, 먼저 추출된 특징이 이미 있으면 백업파일을 사용하게 한다. 없다면 Librosa와 Numpy를 이용하여 pitch, intensity 를 추출한다.
+> 
+> 각 시점에 발생할 수 있는 ‘onset’, 오디오 신호의 특별한 변화점들을 추출한 뒤, 이를 이용하여 tempo를 추출한다.
+> 이번엔 톤을 추출하기 위해 mfccs를 추출한다. Mfcc는 Mel-frequency cepstral coefficients로 노이즈를 제거하고 중요한 음색, 톤을 추출하는 기능을 한다. 이렇게 추출한 톤의 변화율과 가속률을 또 추출한다.
 ```python
     max_len = 1000
     pitch = np.pad(pitch, (0, max_len - len(pitch)))
@@ -286,7 +286,7 @@ def preprocess_audio(file_path):
     print(f"Extracted features saved to {features_file}")
     return features
 ```
-> 이후 행렬계산을 위해 max_len으로 패딩을 하고 추출값을 백업합니다.
+> 이후 행렬계산을 위해 max_len으로 패딩을 하고 추출값을 백업한다.
 ```python
 train_df['audio_features'] = train_df['path'].apply(preprocess_audio)
 test_df['audio_features'] = test_df['path'].apply(preprocess_audio)
@@ -311,10 +311,13 @@ submission_df = pd.DataFrame({
 })
 submission_df.to_csv('submission.csv', index=False)
 ```
-> 데이터 셋을 전처리합니다. 
-> 추출한 특징들을 X에 정리하고 y에 label을 정리합니다. 그후 validation을 위해 0.2의 비율로 나눕니다. 그후 라벨을 숫자로 encode를 합니다.
-> 학습을 시킵니다. SVC모델을 사용하였고 이후 Random Forest, Logistic Regression 으로도 해보았습니다. 
-> 학습된 모델을 바탕으로 test 데이터에 테스트를 합니다. submission.csv로 저장하였습니다.
+> 데이터 셋을 전처리한다.
+>  
+> 추출한 특징들을 X에 정리하고 y에 label을 정리한다. 그후 validation을 위해 0.2의 비율로 나눕니다. 그후 라벨을 숫자로 encode를 한다.
+> 
+> 학습으로는 SVC모델을 사용하였고 이후 Random Forest, Logistic Regression 으로도 해보았다. 
+> 
+> 학습된 모델을 바탕으로 test 데이터에 테스트를 한다. submission.csv로 저장하였다.
 
 ## IV. Evaluation & Analysis	
 | id        | label |
